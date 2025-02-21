@@ -48,7 +48,11 @@ class TimedAuthTokenPair(models.Model):
 
 class ServiceAPIKey(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
-    service_name = models.CharField(max_length=255, unique=True)
+    service_name = models.CharField(max_length=255, unique=True, blank=True)
+    service_base_url = models.CharField(max_length=255, null=True, blank=True)
+    service_user_logout_endpoint = models.CharField(
+        max_length=255, null=True, blank=True
+    )
     key = models.CharField(max_length=255, unique=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
