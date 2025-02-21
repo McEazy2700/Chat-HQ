@@ -10,20 +10,22 @@ from django.conf import settings
 from includes.serializers import MessageResponseSerializer
 from users.models.auth import TimedAuthTokenPair
 from users.models.users import User
+from users.permissions.services import ServicePermissions
 from users.serializers.auth import (
     LoginRequestSerializer,
     RefreshTokenRequestSerializer,
     SignupRequestSerializer,
     TimedAuthTokenPairSerializer,
+    UserWithPermissionsSerializer,
     VerifyTokenRequestSerializer,
 )
 
 
-class AuthViewSet(viewsets.GenericViewSet):
+class AuthViewSet(viewsets.ViewSet):
     @swagger_auto_schema(
         request_body=SignupRequestSerializer,
         responses={status.HTTP_201_CREATED: MessageResponseSerializer},
-        tags=["auth"],
+        tags=["Auth"],
     )
     @action(methods=["POST"], detail=False, url_path="signup", url_name="signup")
     def signup(self, request: Request):
@@ -48,7 +50,7 @@ class AuthViewSet(viewsets.GenericViewSet):
     @swagger_auto_schema(
         request_body=LoginRequestSerializer,
         responses={status.HTTP_200_OK: TimedAuthTokenPairSerializer},
-        tags=["auth"],
+        tags=["Auth"],
     )
     @action(methods=["POST"], detail=False, url_path="token", url_name="token")
     def token_create(self, request: Request):
@@ -69,7 +71,7 @@ class AuthViewSet(viewsets.GenericViewSet):
     @swagger_auto_schema(
         request_body=VerifyTokenRequestSerializer,
         responses={status.HTTP_200_OK: TimedAuthTokenPairSerializer},
-        tags=["auth"],
+        tags=["Auth"],
     )
     @action(methods=["POST"], detail=False, url_path="verify", url_name="verify")
     def verify(self, request: Request):
@@ -90,7 +92,7 @@ class AuthViewSet(viewsets.GenericViewSet):
     @swagger_auto_schema(
         request_body=RefreshTokenRequestSerializer,
         responses={status.HTTP_200_OK: TimedAuthTokenPairSerializer},
-        tags=["auth"],
+        tags=["Auth"],
     )
     @action(methods=["POST"], detail=False, url_path="refresh", url_name="refresh")
     def refresh_token(self, request: Request):
@@ -106,4 +108,32 @@ class AuthViewSet(viewsets.GenericViewSet):
 
         return Response(
             TimedAuthTokenPairSerializer(new_token).data, status=status.HTTP_200_OK
+        )
+
+    @swagger_auto_schema(
+        request_body=VerifyTokenRequestSerializer,
+        responses={status.HTTP_200_OK: UserWithPermissionsSerializer},
+        tags=["Auth"],
+    )
+    @action(
+        methods=["POST"],
+        detail=False,
+        url_path="service_verify_token",
+        url_name="service_verify_token",
+        permission_classes=[ServicePermissions],
+    )
+    def service_verify_token(self, request: Request):
+        serializer = VerifyTokenRequestSerializer(data=request.data)
+        _ = serializer.is_valid(raise_exception=True)
+
+        validated_data = cast(dict[str, Any], serializer.validated_data)
+        token = get_object_or_404(TimedAuthTokenPair, token=validated_data.get("token"))
+
+        try:
+            jwt.decode(token.token, cast(str, settings.SECRET_KEY), algorithms=["H256"])
+        except jwt.ExpiredSignatureError:
+            raise exceptions.AuthenticationFailed("Token Expired")
+
+        return Response(
+            UserWithPermissionsSerializer(token.user).data, status=status.HTTP_200_OK
         )

@@ -1,4 +1,7 @@
+import os
+from typing import Any
 import uuid
+import base64
 from django.contrib.auth import get_user_model
 from django.db import models
 
@@ -14,7 +17,7 @@ class PaymentStatus(models.TextChoices):
 
 class PaymentType(models.TextChoices):
     Subscription = "subscription"
-    Renewal = "Renewal"
+    Renewal = "renewal"
 
 
 class Payment(models.Model):
@@ -41,3 +44,8 @@ class Payment(models.Model):
     narration = models.TextField(null=True, blank=True)
     last_updated = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.reference is None:
+            self.reference = base64.urlsafe_b64encode(os.urandom(30)).decode()
+        return super().save(*args, **kwargs)

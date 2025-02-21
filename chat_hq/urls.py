@@ -20,16 +20,19 @@ from django.urls import include, path
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
+from decouple import config
 
 schema_view = get_schema_view(
     openapi.Info(
         title="Chat-HQ API",
         default_version="v1",
+        description="API documentation for chat authentication service",
         contact=openapi.Contact(email="codeepoch@gmail.com"),
-        license=openapi.License(name="BSD License"),
+        license=openapi.License(name="MIT License"),
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
+    url=f"http://localhost:{config('BACKEND_PORT', '8000')}",
 )
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -42,5 +45,6 @@ urlpatterns = [
         name="schema-swagger-ui",
     ),
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
-    path("users", include("users.urls")),
+    path("users/", include("users.urls")),
+    path("payments/", include("payments.urls")),
 ]

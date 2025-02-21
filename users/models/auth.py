@@ -1,4 +1,6 @@
+import base64
 from datetime import timedelta
+import os
 from typing import Any, cast
 import uuid
 import jwt
@@ -42,3 +44,15 @@ class TimedAuthTokenPair(models.Model):
                 hours=auth_token_settings.get("REFRESH_TOKEN_VALID_DURATION_HOURS") or 2
             ),
         )
+
+
+class ServiceAPIKey(models.Model):
+    id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
+    service_name = models.CharField(max_length=255, unique=True)
+    key = models.CharField(max_length=255, unique=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.key is None:
+            self.key = base64.urlsafe_b64encode(os.urandom(30)).decode()
+        return super().save(*args, **kwargs)

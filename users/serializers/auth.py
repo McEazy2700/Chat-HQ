@@ -1,9 +1,7 @@
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from users.models.auth import TimedAuthTokenPair
-
-User = get_user_model()
+from users.models.users import User
 
 
 class SignupRequestSerializer(serializers.Serializer):
@@ -37,3 +35,36 @@ class TimedAuthTokenPairSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimedAuthTokenPair
         fields = ["token", "refresh_token", "user", "expires_at"]
+
+
+class UserWithPermissionsSerializer(serializers.ModelSerializer):
+    permissions = serializers.ListField(
+        child=serializers.CharField(),
+        read_only=True,
+        help_text="List of user permissions (codenames).",
+    )
+    subscription_payment_paid = serializers.BooleanField()
+
+    class Meta:
+        model = User
+        fields = ["id", "email", "permissions", "subscription_payment_paid"]
+
+    def get_permissions(self, user: User):
+        permission_codenames = []
+
+        for perm in user.user_permissions.all():
+            permission_codenames.append(perm.codename)
+
+        for group in user.groups.all():
+            for perm in group.permissions.all():
+                if perm.codename not in permission_codenames:
+                    permission_codenames.append(perm.codename)
+
+        return permission_codenames
+
+    def get_subscription_payment_paid(self, user: User):
+        from payments.models.payments import Payment, PaymentType
+
+        return Payment.objects.filter(
+            user=user, payment_type=PaymentType.Subscription
+        ).exists()

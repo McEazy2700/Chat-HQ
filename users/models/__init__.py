@@ -1,4 +1,4 @@
 from .users import User
-from .auth import TimedAuthTokenPair
+from .auth import TimedAuthTokenPair, ServiceAPIKey
 
-__all__ = ["User", "TimedAuthTokenPair"]
+__all__ = ["User", "TimedAuthTokenPair", "ServiceAPIKey"]

@@ -49,6 +49,13 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects: CustomUserManager = CustomUserManager()
 
+    class Meta:
+        permissions = [
+            ("can_send_message", "Can send message"),
+            ("can_view_chat", "Can view chats"),
+            ("can_edit_message", "Can edit message"),
+        ]
+
     def __str__(self):
         return self.email
 

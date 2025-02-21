@@ -6,6 +6,4 @@ from users.views.auth import AuthViewSet
 router = routers.DefaultRouter()
 router.register(r"auth", AuthViewSet, basename="auth")
 
-urlpatterns = [
-    path("", include(router.urls)),
-]
+urlpatterns = [path("", include(router.urls))]

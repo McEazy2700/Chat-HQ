@@ -19,6 +19,7 @@ dependencies = [
     "drf-yasg[validation] (>=1.21.8,<2.0.0)",
     "pyjwt[crypto] (>=2.10.1,<3.0.0)",
     "django-extensions (>=3.2.3,<4.0.0)",
+    "drf-nested-routers (>=0.94.1,<0.95.0)",
 ]
 
 
@@ -37,3 +38,4 @@ reportUnknownParameterType = false
 reportUnsafeMultipleInheritance = false
 reportDeprecated = false
 reportAny = false
+reportIncompatibleMethodOverride = false
