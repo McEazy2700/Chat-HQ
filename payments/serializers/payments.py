@@ -24,7 +24,5 @@ class PaymentDetailsSerializer(serializers.ModelSerializer):
         ]
 
 
-class VerifyPaymentRequestSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Payment
-        fields = ["reference"]
+class VerifyPaymentRequestSerializer(serializers.Serializer):
+    reference = serializers.CharField()

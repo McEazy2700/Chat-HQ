@@ -1,3 +1,5 @@
+import base64
+import os
 from typing import Any, cast
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -26,12 +28,15 @@ class PaymentViewSet(viewsets.GenericViewSet):
         detail=False,
         url_path="initiate_payment",
         url_name="initiate-payment",
-        permission_classes=[permissions.IsAuthenticated()],
+        permission_classes=[permissions.IsAuthenticated],
     )
     def initiate_payment(self, request: Request):
         serializer = InitiatePaymentRequestSerializer(data=request.data)
         _ = serializer.is_valid(raise_exception=True)
-        payment = serializer.save(user=request.user)
+        payment = serializer.save(
+            user=request.user,
+            reference=base64.urlsafe_b64encode(os.urandom(30)).decode(),
+        )
 
         return Response(
             PaymentDetailsSerializer(payment).data, status=status.HTTP_201_CREATED
@@ -47,21 +52,29 @@ class PaymentViewSet(viewsets.GenericViewSet):
         detail=False,
         url_path="verify_payment",
         url_name="verify-payment",
-        permission_classes=[permissions.IsAuthenticated()],
+        permission_classes=[permissions.IsAuthenticated],
     )
     def verify_payment(self, request: Request):
         from users.models.users import User
 
         serializer = VerifyPaymentRequestSerializer(data=request.data)
         _ = serializer.is_valid(raise_exception=True)
+
         validated_data = cast(dict[str, Any], serializer.validated_data)
         payment = get_object_or_404(Payment, reference=validated_data.get("reference"))
+
+        if not payment:
+            raise exceptions.NotFound("Payment not found")
         if payment.user != request.user:
             raise exceptions.PermissionDenied(
                 "You are not allowed to perform this action"
             )
+
+        print("Updating Payment", payment)
         payment.status = PaymentStatus.Success
         payment.save()
+
+        print("Saved Payment")
 
         user = get_object_or_404(User, id=payment.user.id)
         user_content_type = ContentType.objects.get_for_model(User)

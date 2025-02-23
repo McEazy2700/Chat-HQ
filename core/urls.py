@@ -26,7 +26,7 @@ schema_view = get_schema_view(
     openapi.Info(
         title="Chat-HQ API",
         default_version="v1",
-        description="API documentation for chat authentication service",
+        description="API documentation for chat authentication and payments service",
         contact=openapi.Contact(email="codeepoch@gmail.com"),
         license=openapi.License(name="MIT License"),
     ),
@@ -34,6 +34,7 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
     url=f"http://localhost:{config('BACKEND_PORT', '8000')}",
 )
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path(

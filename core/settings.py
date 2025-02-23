@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "corsheaders",
     "rest_framework",
     "drf_yasg",
     "django_extensions",
@@ -47,6 +48,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -145,7 +147,13 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
 }
-AUTH_TOKEN = {
+
+CORS_ALLOWED_ORIGINS = [
+    host for host in str(config("CORS_ALLOWED_ORIGINS")).split(",") if host != ""
+]
+CORS_ALLOW_CREDENTIALS = True
+
+CUSTOM_AUTH = {
     "TOKEN_VALID_DURATION_HOURS": 5,
     "REFRESH_TOKEN_VALID_DURATION_HOURS": 24,
     "AUTH_HEADER_KEY": "HTTP_AUTHORIZATION",

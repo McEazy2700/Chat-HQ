@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_yasg.utils import swagger_serializer_method
 
 from users.models.auth import TimedAuthTokenPair
 from users.models.users import User
@@ -38,17 +39,20 @@ class TimedAuthTokenPairSerializer(serializers.ModelSerializer):
 
 
 class UserWithPermissionsSerializer(serializers.ModelSerializer):
-    permissions = serializers.ListField(
-        child=serializers.CharField(),
-        read_only=True,
+    permissions = serializers.SerializerMethodField(
         help_text="List of user permissions (codenames).",
     )
-    subscription_payment_paid = serializers.BooleanField()
+    subscription_payment_paid = serializers.SerializerMethodField(
+        help_text="Whether user has made a subscription payment",
+    )
 
     class Meta:
         model = User
         fields = ["id", "email", "permissions", "subscription_payment_paid"]
 
+    @swagger_serializer_method(
+        serializer_or_field=serializers.ListSerializer(child=serializers.CharField())
+    )
     def get_permissions(self, user: User):
         permission_codenames = []
 
@@ -62,6 +66,9 @@ class UserWithPermissionsSerializer(serializers.ModelSerializer):
 
         return permission_codenames
 
+    @swagger_serializer_method(
+        serializer_or_field=serializers.BooleanField(allow_null=True)
+    )
     def get_subscription_payment_paid(self, user: User):
         from payments.models.payments import Payment, PaymentType
 

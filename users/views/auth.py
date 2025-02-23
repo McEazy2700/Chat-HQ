@@ -1,3 +1,4 @@
+from django.utils import timezone
 import jwt
 from typing import Any, cast
 from django.shortcuts import get_object_or_404
@@ -41,9 +42,11 @@ class AuthViewSet(viewsets.ViewSet):
         )
 
         response = {"message": "Signup successful"}
+        response_serializer = MessageResponseSerializer(data=response)
+        _ = serializer.is_valid()
 
         return Response(
-            MessageResponseSerializer(data=response).data,
+            response_serializer.data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -62,7 +65,7 @@ class AuthViewSet(viewsets.ViewSet):
 
         if not is_valid:
             raise exceptions.AuthenticationFailed("Incorrect email or password")
-        token = TimedAuthTokenPair.new_for_user(user)
+        token = TimedAuthTokenPair.create_for_user(user)
 
         return Response(
             TimedAuthTokenPairSerializer(token).data, status=status.HTTP_200_OK
@@ -81,7 +84,7 @@ class AuthViewSet(viewsets.ViewSet):
         token = get_object_or_404(TimedAuthTokenPair, token=validated_data.get("token"))
 
         try:
-            jwt.decode(token.token, cast(str, settings.SECRET_KEY), algorithms=["H256"])
+            jwt.decode(token.token, cast(str, settings.SECRET_KEY), algorithms="HS256")
         except jwt.ExpiredSignatureError:
             raise exceptions.AuthenticationFailed("Token Expired")
 
@@ -103,7 +106,11 @@ class AuthViewSet(viewsets.ViewSet):
             TimedAuthTokenPair, refresh_token=validated_data.get("refresh_token")
         )
 
-        new_token = TimedAuthTokenPair.new_for_user(token.user)
+        if timezone.now() > token.expires_at:
+            _ = token.delete()
+            raise exceptions.AuthenticationFailed("Refresh Token Expired")
+
+        new_token = TimedAuthTokenPair.create_for_user(token.user)
         _ = token.delete()
 
         return Response(
@@ -130,7 +137,8 @@ class AuthViewSet(viewsets.ViewSet):
         token = get_object_or_404(TimedAuthTokenPair, token=validated_data.get("token"))
 
         try:
-            jwt.decode(token.token, cast(str, settings.SECRET_KEY), algorithms=["H256"])
+            print(token.token)
+            jwt.decode(token.token, cast(str, settings.SECRET_KEY), algorithms="HS256")
         except jwt.ExpiredSignatureError:
             raise exceptions.AuthenticationFailed("Token Expired")
 

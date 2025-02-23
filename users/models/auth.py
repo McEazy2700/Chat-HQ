@@ -21,27 +21,26 @@ class TimedAuthTokenPair(models.Model):
     expires_at = models.DateTimeField()
 
     @classmethod
-    def new_for_user(cls, user: User):
-        auth_token_settings = cast(dict[str, Any], settings.AUTH_TOKEN)
+    def create_for_user(cls, user: User):
+        auth_settings = cast(dict[str, Any], settings.CUSTOM_AUTH)
         encoded = jwt.encode(
             {
                 "email": user.email,
                 "iat": timezone.now(),
                 "exp": timezone.now()
-                + timedelta(
-                    hours=auth_token_settings.get("TOKEN_VALID_DURATION_HOURS") or 2
-                ),
+                + timedelta(hours=auth_settings.get("TOKEN_VALID_DURATION_HOURS") or 2),
             },
             cast(str, settings.SECRET_KEY),
         )
         refresh_token = secrets.token_hex(32)
+
         return TimedAuthTokenPair.objects.create(
             user=user,
             token=encoded,
             refresh_token=refresh_token,
             expires_at=timezone.now()
             + timedelta(
-                hours=auth_token_settings.get("REFRESH_TOKEN_VALID_DURATION_HOURS") or 2
+                hours=auth_settings.get("REFRESH_TOKEN_VALID_DURATION_HOURS") or 2
             ),
         )
 
@@ -53,10 +52,16 @@ class ServiceAPIKey(models.Model):
     service_user_logout_endpoint = models.CharField(
         max_length=255, null=True, blank=True
     )
-    key = models.CharField(max_length=255, unique=True, null=True)
+    key = models.CharField(
+        max_length=255, unique=True, null=True, blank=True, editable=False
+    )
+    issuer_key = models.CharField(
+        max_length=255, unique=True, null=True, blank=True, editable=False
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         if self.key is None:
             self.key = base64.urlsafe_b64encode(os.urandom(30)).decode()
+            self.issuer_key = base64.urlsafe_b64encode(os.urandom(30)).decode()
         return super().save(*args, **kwargs)

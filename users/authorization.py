@@ -11,7 +11,7 @@ User = get_user_model()
 class JWTAuthorization(authentication.BaseAuthentication):
     def authenticate(self, request: Request):
         authorization_key = cast(
-            str, cast(dict[str, Any], settings.AUTH_TOKEN).get("AUTH_HEADER_KEY", "")
+            str, cast(dict[str, Any], settings.CUSTOM_AUTH).get("AUTH_HEADER_KEY", "")
         )
         authorization = cast(
             Optional[str], cast(dict[str, Any], request.META).get(authorization_key, {})
@@ -22,7 +22,7 @@ class JWTAuthorization(authentication.BaseAuthentication):
         try:
             email = cast(
                 dict[str, Any],
-                jwt.decode(token, cast(str, settings.SECRET_KEY), algorithms=["H256"]),
+                jwt.decode(token, cast(str, settings.SECRET_KEY), algorithms="HS256"),
             ).get("email")
             user = User.objects.filter(email=email).first()
 

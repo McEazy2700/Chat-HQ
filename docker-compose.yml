@@ -3,6 +3,7 @@ version: "3.9"
 services:
   web:
     build: .
+    name: chat-hq-web
     command: sh /app/includes/scripts/${RUN_SCRIPT}
     volumes:
       - .:/app
@@ -11,10 +12,13 @@ services:
     env_file:
       - .env
     depends_on:
-      db:
+      chat-hq-db:
         condition: service_healthy
+    networks:
+      - chat_network
 
   db:
+    name: chat-hq-db
     restart: unless-stopped
     image: postgres:14
     env_file:
@@ -35,3 +39,7 @@ services:
 
 volumes:
   db_data:
+
+networks:
+  chat_network:
+    external: true
