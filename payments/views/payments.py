@@ -78,6 +78,7 @@ class PaymentViewSet(viewsets.GenericViewSet):
 
         user = get_object_or_404(User, id=payment.user.id)
         user_content_type = ContentType.objects.get_for_model(User)
+
         send_message_permission = Permission.objects.get(
             codename="can_send_message", content_type=user_content_type
         )
@@ -87,6 +88,7 @@ class PaymentViewSet(viewsets.GenericViewSet):
         edit_message_permission = Permission.objects.get(
             codename="can_edit_message", content_type=user_content_type
         )
+
         user.user_permissions.add(send_message_permission)
         user.user_permissions.add(view_chat_permission)
         user.user_permissions.add(edit_message_permission)

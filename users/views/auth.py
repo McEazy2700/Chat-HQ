@@ -23,6 +23,7 @@ from users.serializers.auth import (
 
 
 class AuthViewSet(viewsets.ViewSet):
+
     @swagger_auto_schema(
         request_body=SignupRequestSerializer,
         responses={status.HTTP_201_CREATED: MessageResponseSerializer},
